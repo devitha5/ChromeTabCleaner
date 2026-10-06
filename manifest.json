@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "ChromeTabCleaner",
+  "version": "0.1.0",
+  "description": "Closes tabs you haven't used in a while. Pinned tabs are protected.",
+  "permissions": ["tabs", "storage", "alarms"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "ChromeTabCleaner" }
+}
