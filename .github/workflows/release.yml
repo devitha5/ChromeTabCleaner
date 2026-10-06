@@ -1,0 +1,29 @@
+# Push a version tag (e.g. `npm version patch && git push --follow-tags`) to
+# test the extension, build the zip, and publish it as a GitHub Release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run package
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "ChromeTabCleaner $GITHUB_REF_NAME" \
+            --notes "Download the zip, unzip it, then load the folder via chrome://extensions → Developer mode → Load unpacked."
