@@ -1,7 +1,7 @@
 // ChromeTabCleaner - service worker (MVP)
-const DAY_MS = 24 * 60 * 60 * 1000;
+import { DEFAULTS, buildRows, seedActivity, isValidThreshold } from "./lib/rules.js";
+
 const ALARM = "cleanup";
-const DEFAULTS = { autoCleanup: true, thresholdDays: 20, protectPinned: true };
 
 // ---- Storage helpers -------------------------------------------------------
 // Writes go through one queue so overlapping tab events can't overwrite each other.
@@ -23,16 +23,10 @@ async function getSettings() {
 const touch = (tabId) => updateActivity((m) => { m[tabId] = Date.now(); });
 
 // ---- Seeding: every open tab gets a timestamp ------------------------------
-// Tab IDs change after a browser restart, so we rebuild the map from open tabs.
-// Unknown tabs use Chrome's own lastAccessed when available, otherwise "now"
-// (the safe direction: a restart can only delay cleanup, never speed it up).
-async function seed() {
+// reset: true on browser startup, when tab IDs are reassigned (see seedActivity).
+async function seed({ reset = false } = {}) {
   const tabs = await chrome.tabs.query({});
-  await updateActivity((m) => {
-    const open = new Set(tabs.map((t) => String(t.id)));
-    for (const id of Object.keys(m)) if (!open.has(id)) delete m[id];
-    for (const t of tabs) if (!m[t.id]) m[t.id] = t.lastAccessed || Date.now();
-  });
+  await updateActivity((m) => { seedActivity(m, tabs, { reset }); });
 }
 
 async function ensureAlarm() {
@@ -47,7 +41,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   await seed();
   await ensureAlarm();
 });
-chrome.runtime.onStartup.addListener(async () => { await seed(); await ensureAlarm(); });
+chrome.runtime.onStartup.addListener(async () => { await seed({ reset: true }); await ensureAlarm(); });
 
 // ---- Activity tracking (all windows) ---------------------------------------
 chrome.tabs.onActivated.addListener(({ tabId }) => touch(tabId));
@@ -61,9 +55,7 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
   if (tab) touch(tab.id);
 });
 
-// ---- Cleanup rules ---------------------------------------------------------
-// A tab is a candidate when it hasn't been *activated* for longer than the
-// threshold. Active tabs and (by default) pinned tabs are never candidates.
+// ---- Cleanup rules (see lib/rules.js) ---------------------------------------
 async function getReport() {
   await queue;
   const [settings, tabs, { lastActive = {} }] = await Promise.all([
@@ -72,17 +64,7 @@ async function getReport() {
     chrome.storage.local.get("lastActive"),
   ]);
   const now = Date.now();
-  const limit = settings.thresholdDays * DAY_MS;
-  const rows = tabs.map((t) => {
-    const last = lastActive[t.id] || now;
-    const protectedReason = t.active ? "active" : (t.pinned && settings.protectPinned ? "pinned" : null);
-    return {
-      id: t.id, windowId: t.windowId, title: t.title, url: t.url,
-      favIconUrl: t.favIconUrl, pinned: t.pinned, lastActive: last,
-      protectedReason, candidate: !protectedReason && now - last > limit,
-    };
-  });
-  return { settings, rows, now };
+  return { settings, rows: buildRows(tabs, lastActive, settings, now), now };
 }
 
 async function cleanNow() {
@@ -108,6 +90,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
       case "getReport": return reply(await getReport());
       case "cleanNow": return reply({ closed: await cleanNow() });
       case "saveSettings":
+        if ("thresholdDays" in msg.settings && !isValidThreshold(msg.settings.thresholdDays)) return reply({ ok: false });
         await chrome.storage.local.set({ settings: { ...(await getSettings()), ...msg.settings } });
         return reply({ ok: true });
     }

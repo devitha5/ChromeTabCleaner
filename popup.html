@@ -6,32 +6,64 @@
 </head>
 <body>
   <header>
-    <h1>Tab cleaner</h1>
-    <p id="summary">Loading…</p>
+    <div class="brand">
+      <span class="logo" aria-hidden="true">🧹</span>
+      <div>
+        <h1>Tab Cleaner</h1>
+        <p id="summary">Loading…</p>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span id="statTabs">–</span><small>Open tabs</small></div>
+      <div class="stat"><span id="statWindows">–</span><small>Windows</small></div>
+      <div class="stat warn"><span id="statReady">–</span><small>Ready to close</small></div>
+    </div>
   </header>
 
-  <section class="settings">
-    <label class="row"><input type="checkbox" id="autoCleanup" /> Close inactive tabs automatically</label>
-    <label class="row"><input type="checkbox" id="protectPinned" /> Never close pinned tabs</label>
-    <label class="row">
-      Close tabs unused for
-      <input type="number" id="thresholdDays" min="0.001" step="any" /> days
-    </label>
-  </section>
+  <main>
+    <section class="card">
+      <h2>Settings</h2>
+      <label class="setting">
+        <span>
+          <strong>Auto-close inactive tabs</strong>
+          <small>Checked every hour</small>
+        </span>
+        <input type="checkbox" class="switch" id="autoCleanup" />
+      </label>
+      <label class="setting">
+        <span>
+          <strong>Protect pinned tabs</strong>
+          <small>Pinned tabs are never closed</small>
+        </span>
+        <input type="checkbox" class="switch" id="protectPinned" />
+      </label>
+      <label class="setting">
+        <span>
+          <strong>Inactivity limit</strong>
+          <small>Close tabs not used for this long</small>
+        </span>
+        <span class="field">
+          <input type="number" id="thresholdDays" min="0.001" step="any" />
+          <span>days</span>
+        </span>
+      </label>
+      <p id="thresholdWarning" class="warning" role="alert" hidden></p>
+    </section>
 
-  <section>
-    <div class="list-head">
-      <h2>Ready to close</h2>
-      <button id="cleanNow" disabled>Close 0 tabs</button>
-    </div>
-    <ul id="candidates"></ul>
-  </section>
+    <section class="card">
+      <div class="list-head">
+        <h2>Ready to close</h2>
+        <button id="cleanNow" disabled>Close 0 tabs</button>
+      </div>
+      <ul id="candidates"></ul>
+    </section>
 
-  <details>
-    <summary>All open tabs</summary>
-    <ul id="all"></ul>
-  </details>
+    <details class="card">
+      <summary><h2>All open tabs</h2></summary>
+      <ul id="all"></ul>
+    </details>
+  </main>
 
-  <script src="popup.js"></script>
+  <script type="module" src="popup.js"></script>
 </body>
 </html>

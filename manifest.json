@@ -3,7 +3,29 @@
   "name": "ChromeTabCleaner",
   "version": "0.1.0",
   "description": "Closes tabs you haven't used in a while. Pinned tabs are protected.",
-  "permissions": ["tabs", "storage", "alarms"],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html", "default_title": "ChromeTabCleaner" }
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ChromeTabCleaner",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
 }

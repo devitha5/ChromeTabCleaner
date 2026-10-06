@@ -13,6 +13,7 @@ number of days (default 20). Local only — no backend, no accounts.
 | --- | --- |
 | `manifest.json` | MV3 manifest — `tabs`, `storage`, `alarms` permissions |
 | `background.js` | Service worker: tracks activation, stores timestamps, hourly cleanup |
+| `lib/rules.js`, `lib/format.js` | Cleanup rules and display helpers (shared, unit-tested) |
 | `popup.html/css/js` | Settings, "Ready to close" list, manual **Close N tabs** button |
 
 ## Rules
@@ -20,6 +21,25 @@ number of days (default 20). Local only — no backend, no accounts.
 - The active tab in each window is never closed.
 - Pinned tabs are protected by default (toggle in popup).
 - Cleanup runs every 60 minutes via `chrome.alarms` when auto-close is on.
+
+## Unit tests
+Requires Node 18+. Tests use Vitest with an in-memory `chrome` mock (`tests/chromeMock.js`),
+and jsdom for the popup.
+
+```sh
+npm install
+npm test          # run once
+npm run coverage  # run with a coverage report (HTML in coverage/)
+```
+
+| Test file | Covers |
+| --- | --- |
+| `tests/rules.test.js` | Which tabs are stale (threshold edge, active, pinned), startup seeding |
+| `tests/background.test.js` | Install/startup, tab events, write queue, popup messages, hourly alarm |
+| `tests/popup.test.js` | Rendering, stats, warnings, settings saving, Close button |
+| `tests/format.test.js` | "x ago" text and host names |
+
+The pure cleanup rules live in `lib/rules.js` so they can be tested without Chrome.
 
 ## Quick QA check (no need to wait 20 days)
 1. Set the threshold to `0.001` days (~1.5 min).
